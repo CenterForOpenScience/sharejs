@@ -43,32 +43,38 @@ if (!settings.debug) {
 
 const mongoOptions = {
     safe: true,
+    server: {}
 };
 
 const mongoSSL = !!process.env.MONGO_SSL;
 const mongoSSLCertFile = process.env.MONGO_SSL_CERT_FILE;
 const mongoSSLKeyFile = process.env.MONGO_SSL_KEY_FILE;
 const mongoSSLCADir = process.env.MONGO_SSL_CA_DIR;
+const mongoSSLValidate = !!process.env.MONGO_SSL_VALIDATE;
 
 if (mongoSSL) {
-    mongoOptions.ssl = true;
+    console.info('Mongo SSL on');
+    mongoOptions.server.ssl = true;
 
     if (fs.existsSync(mongoSSLCertFile) && fs.existsSync(mongoSSLKeyFile)) {
+        console.info('Mongo SSL:\n\tCert File: %s,\n\tKey File: %s', mongoSSLCertFile, mongoSSLKeyFile);
         // sslCert {Buffer/String, default:null}, String or buffer containing the certificate we wish to present (needs to have a mongod server with ssl support, 2.4 or higher)
-        mongoOptions.sslCert = fs.readFileSync(mongoSSLCertFile);
+        mongoOptions.server.sslCert = fs.readFileSync(mongoSSLCertFile);
         // sslKey {Buffer/String, default:null}, String or buffer containing the certificate private key we wish to present (needs to have a mongod server with ssl support, 2.4 or higher)
-        mongoOptions.sslKey = fs.readFileSync(mongoSSLKeyFile);
+        mongoOptions.server.sslKey = fs.readFileSync(mongoSSLKeyFile);
     }
 
     if (fs.existsSync(mongoSSLCADir)) {
         // sslCA {Array, default:null}, Array of valid certificates either as Buffers or Strings (needs to have a mongod server with ssl support, 2.4 or higher)
-        mongoOptions.sslCA = fs.readdirSync(mongoSSLCADir)
+        mongoOptions.server.sslCA = fs.readdirSync(mongoSSLCADir)
             .map(function(file) {
                 return fs.readFileSync(path.join(mongoSSLCADir, file));
             });
 
         // sslValidate {Boolean, default:false}, validate mongod server certificate against ca (needs to have a mongod server with ssl support, 2.4 or higher)
-        mongoOptions.sslValidate = !!mongoOptions.sslCA.length;
+        mongoOptions.server.sslValidate = mongoSSLValidate;
+
+        console.info('Mongo SSL CA validation: %s', mongoOptions.server.sslValidate ? 'on' : 'off');
     }
 }
 
